@@ -68,13 +68,13 @@ func queryEndpoint(endpoint string) ([]byte, error) {
 	return contents, nil
 }
 
-func fetchMetrics() []byte {
+func fetchMetrics() ([]byte, error) {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
 
 		resp, err := queryEndpoint(endpoint)
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 
 		stats[key] = resp
@@ -129,10 +129,10 @@ func fetchMetrics() []byte {
 
 	metricsJson, err := json.MarshalIndent(metrics, "", "  ")
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
-	return metricsJson
+	return metricsJson, nil
 }
 
 var clusterHealth struct {
@@ -208,7 +208,10 @@ func main() {
 		for {
 			select {
 			case <- tick:
-				m := fetchMetrics()
+				m, err := fetchMetrics(); if err != nil {
+					fmt.Println(err)
+					break
+				}
 				fmt.Println(string(m))
 			}
 		}
