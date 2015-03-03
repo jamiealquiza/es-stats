@@ -65,13 +65,31 @@ func getNodeName() (string, error) {
 		return "", err
 	}
 
-	json.Unmarshal(contents, &NodeName)
+	json.Unmarshal(contents, &nodesLocal)
 
 	var name string
-	for k, _ := range NodeName.Nodes.(map[string]interface{}) {
+	for k, _ := range nodesLocal.Nodes.(map[string]interface{}) {
 		name = k
 	}
 	return name, nil
+}
+
+func getMasterName() (string, error) {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_cluster/state/master_node")
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	json.Unmarshal(contents, &clusterState)
+
+	return clusterState.MasterNode, nil
 }
 
 func queryEndpoint(endpoint string) ([]byte, error) {
@@ -157,9 +175,13 @@ func fetchMetrics() ([]byte, error) {
 	return metricsJson, nil
 }
 
-var NodeName struct {
+var nodesLocal struct {
 	Nodes interface {
 	} `json:"nodes"`
+}
+
+var clusterState struct {
+	MasterNode string `json:"master_node"`
 }
 
 var clusterHealth struct {
@@ -231,8 +253,6 @@ var clusterStats struct {
 }
 
 func main() {
-	// localhost:9200/_cluster/state/master_node, master_node
-
 	// Grab node name.
 	var nodeName *string
 	retry := time.Tick(time.Duration(updateInterval) * time.Second)
@@ -248,8 +268,13 @@ func main() {
 		}
 	}
 
+	masterName, err := getMasterName(); if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(masterName)
 	fmt.Println(*nodeName)
-	
+
 	// Run.
 	tick := time.Tick(time.Duration(updateInterval) * time.Second)
 	for {
