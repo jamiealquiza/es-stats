@@ -52,62 +52,6 @@ func init() {
 	flag.Parse()
 }
 
-func getNodeName() (string, error) {
-	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_nodes/_local/name")
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	json.Unmarshal(contents, &nodesLocal)
-
-	var name string
-	for k, _ := range nodesLocal.Nodes.(map[string]interface{}) {
-		name = k
-	}
-	return name, nil
-}
-
-func getMasterName() (string, error) {
-	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_cluster/state/master_node")
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	json.Unmarshal(contents, &clusterState)
-
-	return clusterState.MasterNode, nil
-}
-
-func queryEndpoint(endpoint string) ([]byte, error) {
-	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/" + endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return contents, nil
-}
-
 func fetchMetrics() ([]byte, error) {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
@@ -175,81 +119,59 @@ func fetchMetrics() ([]byte, error) {
 	return metricsJson, nil
 }
 
-var nodesLocal struct {
-	Nodes interface {
-	} `json:"nodes"`
+func queryEndpoint(endpoint string) ([]byte, error) {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/" + endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
+}
+func getNodeName() (string, error) {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_nodes/_local/name")
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	json.Unmarshal(contents, &nodesLocal)
+
+	var name string
+	for k, _ := range nodesLocal.Nodes.(map[string]interface{}) {
+		name = k
+	}
+	return name, nil
 }
 
-var clusterState struct {
-	MasterNode string `json:"master_node"`
-}
+func getMasterName() (string, error) {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_cluster/state/master_node")
+	if err != nil {
+		return "", err
+	}
 
-var clusterHealth struct {
-	Status              string `json:"status"`
-	ActivePrimaryShards int    `json:"active_primary_shards"`
-	ActiveShards        int    `json:"active_shards"`
-	RelocatingShards    int    `json:"relocating_shards"`
-	InitializingShards  int    `json:"initializing_shards"`
-	UnassignedShards    int    `json:"unassined_shards"`
-}
+	defer resp.Body.Close()
 
-var clusterStats struct {
-	Indices struct {
-		Count int
-		Docs  struct {
-			Count int `json:"count"`
-		} `json:"docs"`
-		Store struct {
-			SizeInBytes          int `json:"size_in_bytes"`
-			ThrottleTimeInMillis int `json:"throttle_time_in_millis"`
-		} `json:"store"`
-		Fielddata struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions         int `json:"evictions"`
-		} `json:"fielddata"`
-		FilterCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions         int `json:"evictions"`
-		} `json:"filter_cache"`
-		IdCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-		} `json:"id_cache"`
-		Completion struct {
-			SizeInBytes int `json:"size_in_bytes"`
-		} `json:"completion"`
-		Segments struct {
-			Count                       int `json:"count"`
-			MememoryInBytes             int `json:"memory_in_bytes"`
-			IndexWriterMemoryInBytes    int `json:"index_writer_memory_in_bytes"`
-			IndexWriterMaxMemoryInBytes int `json:"index_writer_max_memory_in_bytes"`
-			VersionMapMemoryInBytes     int `json:"version_map_memory_in_bytes"`
-			FixedBitSetMemoryInBytes    int `json:"fixed_bit_set_memory_in_bytes"`
-		} `json:"segments"`
-	} `json:"indices"`
-	Nodes struct {
-		Count struct {
-			MasterOnly int `json:"master_only"`
-			DataOnly   int `json:"data_only"`
-			MasterData int `json:"master_data"`
-			Client     int `json:"client"`
-		} `json:"count"`
-		Os struct {
-			AvailableProcessors int `json:"available_processors"`
-			Mem                 struct {
-				TotalInBytes int `json:"total_in_bytes"`
-			} `json:"mem"`
-		} `json:"os"`
-		Jvm struct {
-			Mem struct {
-				HeapUsedInBytes int `json:"heap_used_in_bytes"`
-				HeapMaxInBytes  int `json:"heap_max_in_bytes"`
-			} `json:"mem"`
-		} `json:"jvm"`
-		Fs struct {
-			TotalInBytes     int `json:"total_in_bytes"`
-			AvailableInBytes int `json:"available_in_bytes"`
-		} `json:"fs"`
-	} `json:"nodes"`
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	json.Unmarshal(contents, &clusterState)
+
+	return clusterState.MasterNode, nil
 }
 
 func main() {
