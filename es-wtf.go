@@ -44,6 +44,8 @@ var (
 
 	stats   = make(map[string][]byte)
 	metrics = make(map[string]int)
+
+	metricsChan = make(chan map[string]int)
 )
 
 func init() {
@@ -61,8 +63,9 @@ func pollEs(nodeName string) {
 		case false:
 			m, err := fetchMetrics(); if err != nil {
 					log.Println(err)
+					return
 				}
-			fmt.Println(string(m))
+			metricsChan <- m
 		case true:
 			masterName, err := getMasterName(); if err != nil {
 				log.Println(err)
@@ -72,14 +75,26 @@ func pollEs(nodeName string) {
 			} else {
 				m, err := fetchMetrics(); if err != nil {
 					log.Println(err)
+					return
 				}
-				fmt.Println(string(m))
+				metricsChan <- m
 			}
 		}
 	}
 }
 
-func fetchMetrics() ([]byte, error) {
+func handleMetrics() {
+	for {
+		metrics := <- metricsChan
+		metricsJson, err := json.MarshalIndent(metrics, "", "  ")
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Println(string(metricsJson))
+	}
+}
+
+func fetchMetrics() (map[string]int, error) {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
 
@@ -138,12 +153,7 @@ func fetchMetrics() ([]byte, error) {
 	metrics["es-stats.mem.segments.version_map_memory_in_bytes"] = clusterStats.Indices.Segments.VersionMapMemoryInBytes
 	metrics["es-stats.mem.segments.fixed_bit_set_memory_in_bytes"] = clusterStats.Indices.Segments.FixedBitSetMemoryInBytes
 
-	metricsJson, err := json.MarshalIndent(metrics, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	return metricsJson, nil
+	return metrics, nil
 }
 
 func queryEndpoint(endpoint string) ([]byte, error) {
@@ -218,5 +228,6 @@ func main() {
 	}
 
 	// Run.
+	go handleMetrics()
 	pollEs(*nodeName)
 }
