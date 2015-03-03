@@ -213,7 +213,7 @@ func getMasterName() (string, error) {
 }
 
 func main() {
-	log.Println("Starting:")
+	log.Printf("Starting poll interval at endpoint: http://%s:%s\n", nodeIp, nodePort)
 	// Grab node name.
 	var nodeName *string
 	retry := time.Tick(time.Duration(updateInterval) * time.Second)
