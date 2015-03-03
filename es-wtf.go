@@ -54,8 +54,29 @@ func init() {
 	flag.Parse()
 }
 
-func pollEs() {
-
+func pollEs(nodeName string) {
+	pollInt := time.Tick(time.Duration(updateInterval) * time.Second)
+	for _ = range pollInt {
+		switch requireMaster {
+		case false:
+			m, err := fetchMetrics(); if err != nil {
+					log.Println(err)
+				}
+			fmt.Println(string(m))
+		case true:
+			masterName, err := getMasterName(); if err != nil {
+				log.Println(err)
+			}
+			if nodeName != masterName {
+				log.Println("Node is not an elected master")
+			} else {
+				m, err := fetchMetrics(); if err != nil {
+					log.Println(err)
+				}
+				fmt.Println(string(m))
+			}
+		}
+	}
 }
 
 func fetchMetrics() ([]byte, error) {
@@ -197,26 +218,5 @@ func main() {
 	}
 
 	// Run.
-	pollInt := time.Tick(time.Duration(updateInterval) * time.Second)
-	for _ = range pollInt {
-		switch requireMaster {
-		case false:
-			m, err := fetchMetrics(); if err != nil {
-					log.Println(err)
-				}
-			fmt.Println(string(m))
-		case true:
-			masterName, err := getMasterName(); if err != nil {
-				log.Println(err)
-			}
-			if *nodeName != masterName {
-				log.Println("Node is not an elected master")
-			} else {
-				m, err := fetchMetrics(); if err != nil {
-					log.Println(err)
-				}
-				fmt.Println(string(m))
-			}
-		}
-	}
+	pollEs(*nodeName)
 }
