@@ -32,68 +32,69 @@ var clusterState struct {
 
 var clusterHealth struct {
 	Status              string `json:"status"`
-	ActivePrimaryShards int    `json:"active_primary_shards"`
-	ActiveShards        int    `json:"active_shards"`
-	RelocatingShards    int    `json:"relocating_shards"`
-	InitializingShards  int    `json:"initializing_shards"`
-	UnassignedShards    int    `json:"unassined_shards"`
+	ActivePrimaryShards int64    `json:"active_primary_shards"`
+	ActiveShards        int64    `json:"active_shards"`
+	RelocatingShards    int64    `json:"relocating_shards"`
+	InitializingShards  int64    `json:"initializing_shards"`
+	UnassignedShards    int64    `json:"unassined_shards"`
 }
 
 var clusterStats struct {
+	Timestamp int64 `json:"timestamp"`
 	Indices struct {
-		Count int
+		Count int64
 		Docs  struct {
-			Count int `json:"count"`
+			Count int64 `json:"count"`
 		} `json:"docs"`
 		Store struct {
-			SizeInBytes          int `json:"size_in_bytes"`
-			ThrottleTimeInMillis int `json:"throttle_time_in_millis"`
+			SizeInBytes          int64 `json:"size_in_bytes"`
+			ThrottleTimeInMillis int64 `json:"throttle_time_in_millis"`
 		} `json:"store"`
 		Fielddata struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions         int `json:"evictions"`
+			MemorySizeInBytes int64 `json:"memory_size_in_bytes"`
+			Evictions         int64 `json:"evictions"`
 		} `json:"fielddata"`
 		FilterCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions         int `json:"evictions"`
+			MemorySizeInBytes int64 `json:"memory_size_in_bytes"`
+			Evictions         int64 `json:"evictions"`
 		} `json:"filter_cache"`
 		IdCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
+			MemorySizeInBytes int64 `json:"memory_size_in_bytes"`
 		} `json:"id_cache"`
 		Completion struct {
-			SizeInBytes int `json:"size_in_bytes"`
+			SizeInBytes int64 `json:"size_in_bytes"`
 		} `json:"completion"`
 		Segments struct {
-			Count                       int `json:"count"`
-			MememoryInBytes             int `json:"memory_in_bytes"`
-			IndexWriterMemoryInBytes    int `json:"index_writer_memory_in_bytes"`
-			IndexWriterMaxMemoryInBytes int `json:"index_writer_max_memory_in_bytes"`
-			VersionMapMemoryInBytes     int `json:"version_map_memory_in_bytes"`
-			FixedBitSetMemoryInBytes    int `json:"fixed_bit_set_memory_in_bytes"`
+			Count                       int64 `json:"count"`
+			MememoryInBytes             int64 `json:"memory_in_bytes"`
+			IndexWriterMemoryInBytes    int64 `json:"index_writer_memory_in_bytes"`
+			IndexWriterMaxMemoryInBytes int64 `json:"index_writer_max_memory_in_bytes"`
+			VersionMapMemoryInBytes     int64 `json:"version_map_memory_in_bytes"`
+			FixedBitSetMemoryInBytes    int64 `json:"fixed_bit_set_memory_in_bytes"`
 		} `json:"segments"`
 	} `json:"indices"`
 	Nodes struct {
 		Count struct {
-			MasterOnly int `json:"master_only"`
-			DataOnly   int `json:"data_only"`
-			MasterData int `json:"master_data"`
-			Client     int `json:"client"`
+			MasterOnly int64 `json:"master_only"`
+			DataOnly   int64 `json:"data_only"`
+			MasterData int64 `json:"master_data"`
+			Client     int64 `json:"client"`
 		} `json:"count"`
 		Os struct {
-			AvailableProcessors int `json:"available_processors"`
+			AvailableProcessors int64 `json:"available_processors"`
 			Mem                 struct {
-				TotalInBytes int `json:"total_in_bytes"`
+				TotalInBytes int64 `json:"total_in_bytes"`
 			} `json:"mem"`
 		} `json:"os"`
 		Jvm struct {
 			Mem struct {
-				HeapUsedInBytes int `json:"heap_used_in_bytes"`
-				HeapMaxInBytes  int `json:"heap_max_in_bytes"`
+				HeapUsedInBytes int64 `json:"heap_used_in_bytes"`
+				HeapMaxInBytes  int64 `json:"heap_max_in_bytes"`
 			} `json:"mem"`
 		} `json:"jvm"`
 		Fs struct {
-			TotalInBytes     int `json:"total_in_bytes"`
-			AvailableInBytes int `json:"available_in_bytes"`
+			TotalInBytes     int64 `json:"total_in_bytes"`
+			AvailableInBytes int64 `json:"available_in_bytes"`
 		} `json:"fs"`
 	} `json:"nodes"`
 }

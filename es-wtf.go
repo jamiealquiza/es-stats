@@ -43,9 +43,9 @@ var (
 	requireMaster bool
 
 	stats   = make(map[string][]byte)
-	metrics = make(map[string]int)
+	metrics = make(map[string]int64)
 
-	metricsChan = make(chan map[string]int)
+	metricsChan = make(chan map[string]int64)
 )
 
 func init() {
@@ -94,7 +94,7 @@ func handleMetrics() {
 	}
 }
 
-func fetchMetrics() (map[string]int, error) {
+func fetchMetrics() (map[string]int64, error) {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
 
@@ -109,6 +109,7 @@ func fetchMetrics() (map[string]int, error) {
 	json.Unmarshal(stats["cluster-stats"], &clusterStats)
 	json.Unmarshal(stats["cluster-health"], &clusterHealth)
 
+	metrics["timestamp"] = clusterStats.Timestamp
 	metrics["es-stats.state.red"] = 0
 	metrics["es-stats.state.yellow"] = 0
 	metrics["es-stats.state.green"] = 0
@@ -212,6 +213,7 @@ func getMasterName() (string, error) {
 }
 
 func main() {
+	log.Println("Starting:")
 	// Grab node name.
 	var nodeName *string
 	retry := time.Tick(time.Duration(updateInterval) * time.Second)
