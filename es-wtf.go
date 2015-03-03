@@ -26,6 +26,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -36,11 +37,11 @@ var (
 		[]string{"cluster-stats", "_cluster/stats"},
 	}
 
-	nodeIp string
-	nodePort string
+	nodeIp         string
+	nodePort       string
 	updateInterval int
 
-	stats = make(map[string][]byte)
+	stats   = make(map[string][]byte)
 	metrics = make(map[string]int)
 )
 
@@ -51,6 +52,22 @@ func init() {
 	flag.Parse()
 }
 
+func getNodeName() (string, error) {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/_nodes/_local/name")
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	json.Unmarshal(contents, &NodeName)
+	return NodeName.Nodes.Name, nil
+}
 
 func queryEndpoint(endpoint string) ([]byte, error) {
 	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/" + endpoint)
@@ -135,6 +152,12 @@ func fetchMetrics() ([]byte, error) {
 	return metricsJson, nil
 }
 
+var NodeName struct {
+	Nodes struct {
+		Name string
+	} `json:"nodes"`
+}
+
 var clusterHealth struct {
 	Status              string `json:"status"`
 	ActivePrimaryShards int    `json:"active_primary_shards"`
@@ -186,7 +209,7 @@ var clusterStats struct {
 		} `json:"count"`
 		Os struct {
 			AvailableProcessors int `json:"available_processors"`
-			Mem struct {
+			Mem                 struct {
 				TotalInBytes int `json:"total_in_bytes"`
 			} `json:"mem"`
 		} `json:"os"`
@@ -204,15 +227,34 @@ var clusterStats struct {
 }
 
 func main() {
-	tick := time.Tick(time.Duration(updateInterval) * time.Second)
-		for {
-			select {
-			case <- tick:
-				m, err := fetchMetrics(); if err != nil {
-					fmt.Println(err)
-					break
-				}
-				fmt.Println(string(m))
-			}
+	// localhost:9200/_cluster/state/master_node, master_node
+
+	// Grab node name.
+	var nodeName *string
+	retry := time.Tick(time.Duration(updateInterval) * time.Second)
+
+	for _ = range retry {
+		name, err := getNodeName()
+		if err != nil {
+			log.Printf("ElasticSearch unreachable: %s", err)
+
+		} else {
+			nodeName = &name
+			break
 		}
+	}
+
+	// Run.
+	tick := time.Tick(time.Duration(updateInterval) * time.Second)
+	for {
+		select {
+		case <-tick:
+			m, err := fetchMetrics()
+			if err != nil {
+				log.Println(err)
+				break
+			}
+			fmt.Println(string(m))
+		}
+	}
 }
