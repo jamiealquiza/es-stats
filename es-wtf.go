@@ -40,6 +40,7 @@ var (
 	nodeIp         string
 	nodePort       string
 	updateInterval int
+	requireMaster bool
 
 	stats   = make(map[string][]byte)
 	metrics = make(map[string]int)
@@ -49,7 +50,12 @@ func init() {
 	flag.StringVar(&nodeIp, "ip", "127.0.0.1", "ElasticSearch IP address")
 	flag.StringVar(&nodePort, "port", "9200", "ElasticSearch port")
 	flag.IntVar(&updateInterval, "interval", 30, "update interval")
+	flag.BoolVar(&requireMaster, "require-master", false, "only poll if node is master")
 	flag.Parse()
+}
+
+func pollEs() {
+
 }
 
 func fetchMetrics() ([]byte, error) {
@@ -194,18 +200,23 @@ func main() {
 		fmt.Println(err)
 	}
 
-	fmt.Println(masterName)
-	fmt.Println(*nodeName)
-
 	// Run.
-	tick := time.Tick(time.Duration(updateInterval) * time.Second)
-	for {
-		select {
-		case <-tick:
-			m, err := fetchMetrics()
-			if err != nil {
+	//tick := time.Tick(time.Duration(updateInterval) * time.Second)
+	switch requireMaster {
+	case false:
+		m, err := fetchMetrics(); if err != nil {
 				log.Println(err)
-				break
+			}
+		fmt.Println(string(m))
+	case true:
+		masterName, err := getMasterName(); if err != nil {
+			log.Println(err)
+		}
+		if *nodeName != masterName {
+			log.Println("Node is not an elected master")
+		} else {
+			m, err := fetchMetrics(); if err != nil {
+				log.Println(err)
 			}
 			fmt.Println(string(m))
 		}
