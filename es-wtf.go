@@ -22,93 +22,53 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
-	"net/http"
+	"flag"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
-var endpoints = [][]string { 
-	[]string { "cluster-health", "_cluster/health" },
-	[]string { "cluster-stats", "_cluster/stats" },
+var (
+	endpoints = [][]string{
+		[]string{"cluster-health", "_cluster/health"},
+		[]string{"cluster-stats", "_cluster/stats"},
+	}
+
+	nodeIp string
+	nodePort string
+	updateInterval int
+
+	stats = make(map[string][]byte)
+	metrics = make(map[string]int)
+)
+
+func init() {
+	flag.StringVar(&nodeIp, "ip", "127.0.0.1", "ElasticSearch IP address")
+	flag.StringVar(&nodePort, "port", "9200", "ElasticSearch port")
+	flag.IntVar(&updateInterval, "interval", 30, "update interval")
+	flag.Parse()
 }
 
+
 func queryEndpoint(endpoint string) ([]byte, error) {
-        resp, err := http.Get("http://localhost:9200/" + endpoint)
-        if err != nil {
+	resp, err := http.Get("http://" + nodeIp + ":" + nodePort + "/" + endpoint)
+	if err != nil {
 		return nil, err
-        }   
+	}
 
-        defer resp.Body.Close()
+	defer resp.Body.Close()
 
-        contents, err := ioutil.ReadAll(resp.Body)
-        if err != nil {
-                return nil, err
-        }   
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	return contents, nil
 }
 
-var clusterHealth struct {
-	Status string `json:"status"`
-	ActivePrimaryShards int `json:"active_primary_shards"`
-	ActiveShards int `json:"active_shards"`
-	RelocatingShards int `json:"relocating_shards"`
-	InitializingShards int `json:"initializing_shards"`
-	UnassignedShards int `json:"unassined_shards"`
-}
-
-var clusterStats struct {
-	Indices struct {
-		Count int
-		Docs struct {
-			Count int `json:"count"`
-		} `json:"docs"`
-		Store struct {
-			SizeInBytes int `json:"size_in_bytes"`
-			ThrottleTimeInMillis int `json:"throttle_time_in_millis"`
-		} `json:"store"`
-		Fielddata struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions int `json:"evictions"`
-                } `json:"fielddata"`
-		FilterCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-			Evictions int `json:"evictions"`	
-		} `json:"filter_cache"`
-		IdCache struct {
-			MemorySizeInBytes int `json:"memory_size_in_bytes"`
-		} `json:"id_cache"`
-		Completion struct {
-			SizeInBytes int `json:"size_in_bytes"`
-		} `json:"completion"`
-		Segments struct {
-			Count int `json:"count"`
-			MememoryInBytes int `json:"memory_in_bytes"`
-			IndexWriterMemoryInBytes int `json:"index_writer_memory_in_bytes"`
-			IndexWriterMaxMemoryInBytes int `json:"index_writer_max_memory_in_bytes"`
-			VersionMapMemoryInBytes int `json:"version_map_memory_in_bytes"`
-			FixedBitSetMemoryInBytes int `json:"fixed_bit_set_memory_in_bytes"`
-		} `json:"segments"`
-	} `json:"indices"`
-	Nodes struct {
-		Count struct {
-			MasterOnly int `json:"master_only"`
-			DataOnly int `json:"data_only"`
-			MasterData int `json:"master_data"`
-			Client int `json:"client"`
-		} `json:"count"`
-        	Fs struct {
-                	TotalInBytes int `json:"total_in_bytes"`
-        	        AvailableInBytes int `json:"available_in_bytes"`
-        	} `json:"fs"`
-	} `json:"nodes"`
-}
-
-func main() {
-	// Object to collect info from various API endpoints.
-	stats := make(map[string][]byte)
-
+func fetchMetrics() []byte {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
 
@@ -123,54 +83,133 @@ func main() {
 	json.Unmarshal(stats["cluster-stats"], &clusterStats)
 	json.Unmarshal(stats["cluster-health"], &clusterHealth)
 
-	// Object that will hold final metrics to be sent to Graphite.
-	metrics := make(map[string]int)
-
 	metrics["es-stats.state.red"] = 0
-        metrics["es-stats.state.yellow"] = 0
-        metrics["es-stats.state.green"] = 0
+	metrics["es-stats.state.yellow"] = 0
+	metrics["es-stats.state.green"] = 0
 	// Flip value according to read state.
-	metrics["es-stats.state." + clusterHealth.Status] = 1
+	metrics["es-stats.state."+clusterHealth.Status] = 1
 
-        metrics["es-stats.shards.active_primary_shards"] = clusterHealth.ActivePrimaryShards
-        metrics["es-stats.shards.active_shards"] = clusterHealth.ActiveShards
-        metrics["es-stats.shards.relocating_shards"] = clusterHealth.RelocatingShards
-        metrics["es-stats.shards.initializing_shards"] = clusterHealth.InitializingShards
-        metrics["es-stats.shards.unassigned_shards"] = clusterHealth.UnassignedShards
-	
+	metrics["es-stats.shards.active_primary_shards"] = clusterHealth.ActivePrimaryShards
+	metrics["es-stats.shards.active_shards"] = clusterHealth.ActiveShards
+	metrics["es-stats.shards.relocating_shards"] = clusterHealth.RelocatingShards
+	metrics["es-stats.shards.initializing_shards"] = clusterHealth.InitializingShards
+	metrics["es-stats.shards.unassigned_shards"] = clusterHealth.UnassignedShards
+
 	metrics["es-stats.indices"] = clusterStats.Indices.Count
-        metrics["es-stats.docs"] = clusterStats.Indices.Docs.Count 
+	metrics["es-stats.docs"] = clusterStats.Indices.Docs.Count
+	metrics["es-stats.cluster_cpu_cores"] = clusterStats.Nodes.Os.AvailableProcessors
+	metrics["es-stats.cluster_memory"] = clusterStats.Nodes.Os.Mem.TotalInBytes
 
-        metrics["es-stats.nodes.master"] = clusterStats.Nodes.Count.MasterOnly 
-        metrics["es-stats.nodes.data"] = clusterStats.Nodes.Count.DataOnly
-        metrics["es-stats.nodes.master_data"] = clusterStats.Nodes.Count.MasterData
-        metrics["es-stats.nodes.client"] = clusterStats.Nodes.Count.Client
+	metrics["es-stats.nodes.master"] = clusterStats.Nodes.Count.MasterOnly
+	metrics["es-stats.nodes.data"] = clusterStats.Nodes.Count.DataOnly
+	metrics["es-stats.nodes.master_data"] = clusterStats.Nodes.Count.MasterData
+	metrics["es-stats.nodes.client"] = clusterStats.Nodes.Count.Client
 
-        metrics["es-stats.fs.total"] = clusterStats.Nodes.Fs.TotalInBytes 
-        metrics["es-stats.fs.available"] = clusterStats.Nodes.Fs.AvailableInBytes
-        storageUsed := metrics["es-stats.fs.total"] - metrics["es-stats.fs.available"] 
+	metrics["es-stats.fs.total"] = clusterStats.Nodes.Fs.TotalInBytes
+	metrics["es-stats.fs.available"] = clusterStats.Nodes.Fs.AvailableInBytes
+	storageUsed := metrics["es-stats.fs.total"] - metrics["es-stats.fs.available"]
 	metrics["es-stats.fs.used"] = storageUsed
 
-        metrics["es-stats.mem.store.size_in_bytes"] = clusterStats.Indices.Store.SizeInBytes
-        metrics["es-stats.mem.store.throttle_time_in_millis"] = clusterStats.Indices.Store.ThrottleTimeInMillis
-        metrics["es-stats.mem.fielddata.memory_size_in_bytes"] = clusterStats.Indices.Fielddata.MemorySizeInBytes
-        metrics["es-stats.mem.fielddata.evictions"] = clusterStats.Indices.Fielddata.Evictions
-        metrics["es-stats.mem.filter_cache.memory_size_in_bytes"] = clusterStats.Indices.FilterCache.MemorySizeInBytes
-        metrics["es-stats.mem.filter_cache.evictions"] = clusterStats.Indices.FilterCache.Evictions
-        metrics["es-stats.mem.id_cache.memory_size_in_bytes"] = clusterStats.Indices.IdCache.MemorySizeInBytes
-        metrics["es-stats.mem.completion.size_in_bytes"] = clusterStats.Indices.Completion.SizeInBytes
-        metrics["es-stats.mem.segments.count"] = clusterStats.Indices.Segments.Count
-        metrics["es-stats.mem.segments.memory_in_bytes"] = clusterStats.Indices.Segments.MememoryInBytes
-        metrics["es-stats.mem.segments.index_writer_memory_in_bytes"] = clusterStats.Indices.Segments.IndexWriterMemoryInBytes
-        metrics["es-stats.mem.segments.index_writer_max_memory_in_bytes"] = clusterStats.Indices.Segments.IndexWriterMaxMemoryInBytes
-        metrics["es-stats.mem.segments.version_map_memory_in_bytes"] = clusterStats.Indices.Segments.VersionMapMemoryInBytes
-        metrics["es-stats.mem.segments.fixed_bit_set_memory_in_bytes"] = clusterStats.Indices.Segments.FixedBitSetMemoryInBytes
+	metrics["es-stats.mem.jvm.heap_used_in_bytes"] = clusterStats.Nodes.Jvm.Mem.HeapUsedInBytes
+	metrics["es-stats.mem.jvm.heap_max_in_bytes"] = clusterStats.Nodes.Jvm.Mem.HeapMaxInBytes
+	metrics["es-stats.mem.store.size_in_bytes"] = clusterStats.Indices.Store.SizeInBytes
+	metrics["es-stats.mem.store.throttle_time_in_millis"] = clusterStats.Indices.Store.ThrottleTimeInMillis
+	metrics["es-stats.mem.fielddata.memory_size_in_bytes"] = clusterStats.Indices.Fielddata.MemorySizeInBytes
+	metrics["es-stats.mem.fielddata.evictions"] = clusterStats.Indices.Fielddata.Evictions
+	metrics["es-stats.mem.filter_cache.memory_size_in_bytes"] = clusterStats.Indices.FilterCache.MemorySizeInBytes
+	metrics["es-stats.mem.filter_cache.evictions"] = clusterStats.Indices.FilterCache.Evictions
+	metrics["es-stats.mem.id_cache.memory_size_in_bytes"] = clusterStats.Indices.IdCache.MemorySizeInBytes
+	metrics["es-stats.mem.completion.size_in_bytes"] = clusterStats.Indices.Completion.SizeInBytes
+	metrics["es-stats.mem.segments.count"] = clusterStats.Indices.Segments.Count
+	metrics["es-stats.mem.segments.memory_in_bytes"] = clusterStats.Indices.Segments.MememoryInBytes
+	metrics["es-stats.mem.segments.index_writer_memory_in_bytes"] = clusterStats.Indices.Segments.IndexWriterMemoryInBytes
+	metrics["es-stats.mem.segments.index_writer_max_memory_in_bytes"] = clusterStats.Indices.Segments.IndexWriterMaxMemoryInBytes
+	metrics["es-stats.mem.segments.version_map_memory_in_bytes"] = clusterStats.Indices.Segments.VersionMapMemoryInBytes
+	metrics["es-stats.mem.segments.fixed_bit_set_memory_in_bytes"] = clusterStats.Indices.Segments.FixedBitSetMemoryInBytes
 
-
-	out, err := json.MarshalIndent(metrics, "", "  ")
+	metricsJson, err := json.MarshalIndent(metrics, "", "  ")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println(string(out))
+	return metricsJson
+}
+
+var clusterHealth struct {
+	Status              string `json:"status"`
+	ActivePrimaryShards int    `json:"active_primary_shards"`
+	ActiveShards        int    `json:"active_shards"`
+	RelocatingShards    int    `json:"relocating_shards"`
+	InitializingShards  int    `json:"initializing_shards"`
+	UnassignedShards    int    `json:"unassined_shards"`
+}
+
+var clusterStats struct {
+	Indices struct {
+		Count int
+		Docs  struct {
+			Count int `json:"count"`
+		} `json:"docs"`
+		Store struct {
+			SizeInBytes          int `json:"size_in_bytes"`
+			ThrottleTimeInMillis int `json:"throttle_time_in_millis"`
+		} `json:"store"`
+		Fielddata struct {
+			MemorySizeInBytes int `json:"memory_size_in_bytes"`
+			Evictions         int `json:"evictions"`
+		} `json:"fielddata"`
+		FilterCache struct {
+			MemorySizeInBytes int `json:"memory_size_in_bytes"`
+			Evictions         int `json:"evictions"`
+		} `json:"filter_cache"`
+		IdCache struct {
+			MemorySizeInBytes int `json:"memory_size_in_bytes"`
+		} `json:"id_cache"`
+		Completion struct {
+			SizeInBytes int `json:"size_in_bytes"`
+		} `json:"completion"`
+		Segments struct {
+			Count                       int `json:"count"`
+			MememoryInBytes             int `json:"memory_in_bytes"`
+			IndexWriterMemoryInBytes    int `json:"index_writer_memory_in_bytes"`
+			IndexWriterMaxMemoryInBytes int `json:"index_writer_max_memory_in_bytes"`
+			VersionMapMemoryInBytes     int `json:"version_map_memory_in_bytes"`
+			FixedBitSetMemoryInBytes    int `json:"fixed_bit_set_memory_in_bytes"`
+		} `json:"segments"`
+	} `json:"indices"`
+	Nodes struct {
+		Count struct {
+			MasterOnly int `json:"master_only"`
+			DataOnly   int `json:"data_only"`
+			MasterData int `json:"master_data"`
+			Client     int `json:"client"`
+		} `json:"count"`
+		Os struct {
+			AvailableProcessors int `json:"available_processors"`
+			Mem struct {
+				TotalInBytes int `json:"total_in_bytes"`
+			} `json:"mem"`
+		} `json:"os"`
+		Jvm struct {
+			Mem struct {
+				HeapUsedInBytes int `json:"heap_used_in_bytes"`
+				HeapMaxInBytes  int `json:"heap_max_in_bytes"`
+			} `json:"mem"`
+		} `json:"jvm"`
+		Fs struct {
+			TotalInBytes     int `json:"total_in_bytes"`
+			AvailableInBytes int `json:"available_in_bytes"`
+		} `json:"fs"`
+	} `json:"nodes"`
+}
+
+func main() {
+	tick := time.Tick(time.Duration(updateInterval) * time.Second)
+		for {
+			select {
+			case <- tick:
+				m := fetchMetrics()
+				fmt.Println(string(m))
+			}
+		}
 }
