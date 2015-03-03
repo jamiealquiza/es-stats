@@ -66,7 +66,12 @@ func getNodeName() (string, error) {
 	}
 
 	json.Unmarshal(contents, &NodeName)
-	return NodeName.Nodes.Name, nil
+
+	var name string
+	for k, _ := range NodeName.Nodes.(map[string]interface{}) {
+		name = k
+	}
+	return name, nil
 }
 
 func queryEndpoint(endpoint string) ([]byte, error) {
@@ -153,8 +158,7 @@ func fetchMetrics() ([]byte, error) {
 }
 
 var NodeName struct {
-	Nodes struct {
-		Name string
+	Nodes interface {
 	} `json:"nodes"`
 }
 
@@ -244,6 +248,8 @@ func main() {
 		}
 	}
 
+	fmt.Println(*nodeName)
+	
 	// Run.
 	tick := time.Tick(time.Duration(updateInterval) * time.Second)
 	for {
