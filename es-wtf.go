@@ -64,7 +64,7 @@ func init() {
 	flag.BoolVar(&requireMaster, "require-master", false, "Only poll if node is an elected master")
 	flag.StringVar(&graphiteIp, "graphite-ip", "", "Destination Graphite IP address")
 	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite plaintext port")
-	flag.StringVar(&metricsPrefix, "metrics-prefix", hostname, "Top-level Graphite namespace prefix")
+	flag.StringVar(&metricsPrefix, "metrics-prefix", hostname, "Top-level Graphite namespace prefix (defaults to hostname)")
 	flag.Parse()
 }
 
