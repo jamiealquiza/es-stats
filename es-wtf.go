@@ -32,6 +32,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -56,13 +57,14 @@ var (
 )
 
 func init() {
+	hostname, _ := os.Hostname()
 	flag.StringVar(&nodeIp, "ip", "127.0.0.1", "ElasticSearch IP address")
 	flag.StringVar(&nodePort, "port", "9200", "ElasticSearch port")
 	flag.IntVar(&updateInterval, "interval", 30, "update interval")
 	flag.BoolVar(&requireMaster, "require-master", false, "Only poll if node is an elected master")
 	flag.StringVar(&graphiteIp, "graphite-ip", "", "Destination Graphite IP address")
 	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite plaintext port")
-	flag.StringVar(&metricsPrefix, "metrics-prefix", "elasticsearch", "Top-level Graphite namespace prefix")
+	flag.StringVar(&metricsPrefix, "metrics-prefix", hostname, "Top-level Graphite namespace prefix")
 	flag.Parse()
 }
 
