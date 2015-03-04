@@ -2,6 +2,8 @@
 //
 // Copyright (c) 2015 Jamie Alquiza
 //
+// http://knowyourmeme.com/memes/deal-with-it.
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -56,9 +58,9 @@ func init() {
 	flag.StringVar(&nodeIp, "ip", "127.0.0.1", "ElasticSearch IP address")
 	flag.StringVar(&nodePort, "port", "9200", "ElasticSearch port")
 	flag.IntVar(&updateInterval, "interval", 30, "update interval")
-	flag.BoolVar(&requireMaster, "require-master", false, "only poll if node is master")
+	flag.BoolVar(&requireMaster, "require-master", false, "Only poll if node is an elected master")
 	flag.StringVar(&graphiteIp, "graphite-ip", "", "Destination Graphite IP address")
-	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite port")
+	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite plaintext port")
 	flag.Parse()
 }
 
@@ -229,7 +231,7 @@ func getMasterName() (string, error) {
 }
 
 func main() {
-	log.Printf("Starting poll interval at endpoint: http://%s:%s\n", nodeIp, nodePort)
+	log.Printf("Starting polling at: http://%s:%s\n", nodeIp, nodePort)
 
 	// Grab node name.
 	var nodeName *string

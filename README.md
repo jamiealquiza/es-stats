@@ -1,43 +1,52 @@
 # es-wtf
 
-More efficient es-clusterstats rewrite.
+Reads key metrics from ElasticSearch and writes to Graphite.
 
+### Installation
+
+es-wtf has no external dependencies (you're welcome). Assuming Go is installed (built/tested with 1.4.x):
+
+- `go get github.com/jamiealquiza/go-wtf`
+- `go build github.com/jamiealquiza/go-wtf`
+
+Binary will be found at: `$GOPATH/bin/go-wtf`
+
+### Usage
+
+Flags:
 <pre>
-{
-  "es-stats.cluster_cpu_cores": 26,
-  "es-stats.cluster_memory": 143036350464,
-  "es-stats.docs": 250710444,
-  "es-stats.fs.available": 8614218702848,
-  "es-stats.fs.total": 9765671694336,
-  "es-stats.fs.used": 1151452991488,
-  "es-stats.indices": 18,
-  "es-stats.mem.completion.size_in_bytes": 0,
-  "es-stats.mem.fielddata.evictions": 0,
-  "es-stats.mem.fielddata.memory_size_in_bytes": 29806511765,
-  "es-stats.mem.filter_cache.evictions": 293040394,
-  "es-stats.mem.filter_cache.memory_size_in_bytes": 505115312,
-  "es-stats.mem.id_cache.memory_size_in_bytes": 0,
-  "es-stats.mem.jvm.heap_max_in_bytes": 88864849920,
-  "es-stats.mem.jvm.heap_used_in_bytes": 40194947824,
-  "es-stats.mem.segments.count": 1135,
-  "es-stats.mem.segments.fixed_bit_set_memory_in_bytes": 0,
-  "es-stats.mem.segments.index_writer_max_memory_in_bytes": 0,
-  "es-stats.mem.segments.index_writer_memory_in_bytes": 28500196,
-  "es-stats.mem.segments.memory_in_bytes": 2102347392,
-  "es-stats.mem.segments.version_map_memory_in_bytes": 659956,
-  "es-stats.mem.store.size_in_bytes": 641893885766,
-  "es-stats.mem.store.throttle_time_in_millis": 0,
-  "es-stats.nodes.client": 3,
-  "es-stats.nodes.data": 3,
-  "es-stats.nodes.master": 3,
-  "es-stats.nodes.master_data": 0,
-  "es-stats.shards.active_primary_shards": 54,
-  "es-stats.shards.active_shards": 54,
-  "es-stats.shards.initializing_shards": 0,
-  "es-stats.shards.relocating_shards": 0,
-  "es-stats.shards.unassigned_shards": 0,
-  "es-stats.state.green": 1,
-  "es-stats.state.red": 0,
-  "es-stats.state.yellow": 0
-}
+./es-wtf -h
+Usage of ./es-wtf:
+  -graphite-ip="": Destination Graphite IP address
+  -graphite-port="2003": Destination Graphite plaintext port
+  -interval=30: Metrics polling interval
+  -ip="127.0.0.1": ElasticSearch IP address
+  -port="9200": ElasticSearch port
+  -require-master=false: Only poll if node is an elected master
 </pre>
+
+Running:
+<pre>
+% ./es-wtf -ip="192.168.100.204" -interval=5 -graphite-ip="192.168.100.175" -graphite-port="2013"
+2015/03/04 11:13:58 Starting polling at: http://192.168.100.204:9200
+2015/03/04 11:14:08 Metrics received
+2015/03/04 11:14:08 Metrics flushed to Graphite
+2015/03/04 11:14:13 Metrics received
+2015/03/04 11:14:13 Metrics flushed to Graphite
+2015/03/04 11:14:18 Metrics received
+2015/03/04 11:14:18 Metrics flushed to Graphite
+2015/03/04 11:14:23 Metrics received
+2015/03/04 11:14:23 Metrics flushed to Graphite
+2015/03/04 11:14:28 Metrics received
+2015/03/04 11:14:28 Metrics flushed to Graphite
+2015/03/04 11:14:33 Metrics received
+2015/03/04 11:14:33 Metrics flushed to Graphite
+2015/03/04 11:14:38 Metrics received
+2015/03/04 11:14:38 Metrics flushed to Graphite
+</pre>
+
+Get metrics:
+![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-clusterstats-graphite.png)
+
+Make pretty graphs:
+![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-clusterstats.png)
