@@ -23,6 +23,7 @@ Usage of ./es-wtf:
   -graphite-port="2003": Destination Graphite plaintext port
   -interval=30: Metrics polling interval
   -ip="127.0.0.1": ElasticSearch IP address
+  -metrics-prefix="elasticsearch": Top-level Graphite namespace prefix
   -port="9200": ElasticSearch port
   -require-master=false: Only poll if node is an elected master
 </pre>

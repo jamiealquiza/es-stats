@@ -47,6 +47,7 @@ var (
 	requireMaster bool
 	graphiteIp string
 	graphitePort string
+	metricsPrefix string
 
 	stats   = make(map[string][]byte)
 	metrics = make(map[string]int64)
@@ -61,6 +62,7 @@ func init() {
 	flag.BoolVar(&requireMaster, "require-master", false, "Only poll if node is an elected master")
 	flag.StringVar(&graphiteIp, "graphite-ip", "", "Destination Graphite IP address")
 	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite plaintext port")
+	flag.StringVar(&metricsPrefix, "metrics-prefix", "elasticsearch", "Top-level Graphite namespace prefix")
 	flag.Parse()
 }
 
@@ -100,7 +102,7 @@ func handleMetrics(graphite io.ReadWriteCloser) {
 		delete(metrics, "timestamp")
 
 		for k, v := range metrics {
-			_, err := fmt.Fprintf(graphite, "%s %d %d\n", k, v, ts)
+			_, err := fmt.Fprintf(graphite, "%s.%s %d %d\n", metricsPrefix, k, v, ts)
 			if err != nil {
 				log.Printf("Error flushing to Graphite: %s", err)
 			}
