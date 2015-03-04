@@ -25,8 +25,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
@@ -41,11 +43,13 @@ var (
 	nodePort       string
 	updateInterval int
 	requireMaster bool
+	graphiteIp string
+	graphitePort string
 
 	stats   = make(map[string][]byte)
 	metrics = make(map[string]int64)
 
-	metricsChan = make(chan map[string]int64)
+	metricsChan = make(chan map[string]int64, 30)
 )
 
 func init() {
@@ -53,6 +57,8 @@ func init() {
 	flag.StringVar(&nodePort, "port", "9200", "ElasticSearch port")
 	flag.IntVar(&updateInterval, "interval", 30, "update interval")
 	flag.BoolVar(&requireMaster, "require-master", false, "only poll if node is master")
+	flag.StringVar(&graphiteIp, "graphite-ip", "", "Destination Graphite IP address")
+	flag.StringVar(&graphitePort, "graphite-port", "", "Destination Graphite port")
 	flag.Parse()
 }
 
@@ -83,18 +89,22 @@ func pollEs(nodeName string) {
 	}
 }
 
-func handleMetrics() {
+func handleMetrics(graphite io.ReadWriteCloser) {
 	for {
 		metrics := <- metricsChan
+		log.Println("Metrics received")
+
 		ts := metrics["timestamp"]
 		delete(metrics, "timestamp")
-		/*metricsJson, err := json.MarshalIndent(metrics, "", "  ")
-		if err != nil {
-			log.Println(err)
-		}*/
+
 		for k, v := range metrics {
-			fmt.Printf("%s %d %d\n", k, v, ts)
+			_, err := fmt.Fprintf(graphite, "%s %d %d\n", k, v, ts)
+			if err != nil {
+				log.Printf("Error flushing to Graphite: %s", err)
+			}
 		}
+
+		log.Println("Metrics flushed to Graphite")
 	}
 }
 
@@ -113,7 +123,9 @@ func fetchMetrics() (map[string]int64, error) {
 	json.Unmarshal(stats["cluster-stats"], &clusterStats)
 	json.Unmarshal(stats["cluster-health"], &clusterHealth)
 
-	metrics["timestamp"] = clusterStats.Timestamp
+	now := time.Now()
+	ts := int64(now.Unix())
+	metrics["timestamp"] = ts
 	metrics["es-stats.state.red"] = 0
 	metrics["es-stats.state.yellow"] = 0
 	metrics["es-stats.state.green"] = 0
@@ -234,7 +246,12 @@ func main() {
 		}
 	}
 
+	// Connect to Graphite.
+	graphite, err := net.Dial("tcp", graphiteIp + ":" + graphitePort); if err != nil {
+		log.Printf("Grapite unreachable: %s", err)
+	}
+
 	// Run.
-	go handleMetrics()
+	go handleMetrics(graphite)
 	pollEs(*nodeName)
 }

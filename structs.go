@@ -40,7 +40,6 @@ var clusterHealth struct {
 }
 
 var clusterStats struct {
-	Timestamp int64 `json:"timestamp"`
 	Indices struct {
 		Count int64
 		Docs  struct {
