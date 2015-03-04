@@ -75,9 +75,9 @@ func pollEs(nodeName string) {
 		case false:
 			m, err := fetchMetrics(); if err != nil {
 					log.Println(err)
-					return
+				} else {
+					metricsChan <- m
 				}
-			metricsChan <- m
 		case true:
 			masterName, err := getMasterName(); if err != nil {
 				log.Println(err)
@@ -87,9 +87,9 @@ func pollEs(nodeName string) {
 			} else {
 				m, err := fetchMetrics(); if err != nil {
 					log.Println(err)
-					return
+				} else {
+					metricsChan <- m
 				}
-				metricsChan <- m
 			}
 		}
 	}
@@ -235,8 +235,6 @@ func getMasterName() (string, error) {
 }
 
 func main() {
-	log.Printf("Starting polling at: http://%s:%s\n", nodeIp, nodePort)
-
 	// Grab node name.
 	var nodeName *string
 	retry := time.Tick(time.Duration(updateInterval) * time.Second)
@@ -248,6 +246,7 @@ func main() {
 
 		} else {
 			nodeName = &name
+			log.Printf("Connect to ElasticSearch: http://%s:%s\n", nodeIp, nodePort)
 			break
 		}
 	}
@@ -255,6 +254,8 @@ func main() {
 	// Connect to Graphite.
 	graphite, err := net.Dial("tcp", graphiteIp + ":" + graphitePort); if err != nil {
 		log.Printf("Grapite unreachable: %s", err)
+	} else {
+		log.Printf("Connected to Graphite: %s port %s\n", graphiteIp, graphitePort)
 	}
 
 	// Run.
