@@ -257,7 +257,7 @@ func main() {
 	// Connect to Graphite.
 	graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
 	if err != nil {
-		log.Printf("Grapite unreachable: %s", err)
+		log.Printf("Graphite unreachable: %s", err)
 	} else {
 		log.Printf("Connected to Graphite: %s port %s\n", graphiteIp, graphitePort)
 	}
