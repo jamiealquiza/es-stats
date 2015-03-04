@@ -1,6 +1,8 @@
 # es-wtf
 
-Reads key metrics from ElasticSearch and writes to Graphite.
+Reads key metrics from ElasticSearch and writes to Graphite. 
+
+Just built, needs thorough testing.
 
 ### Installation
 
