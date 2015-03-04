@@ -86,11 +86,15 @@ func pollEs(nodeName string) {
 func handleMetrics() {
 	for {
 		metrics := <- metricsChan
-		metricsJson, err := json.MarshalIndent(metrics, "", "  ")
+		ts := metrics["timestamp"]
+		delete(metrics, "timestamp")
+		/*metricsJson, err := json.MarshalIndent(metrics, "", "  ")
 		if err != nil {
 			log.Println(err)
+		}*/
+		for k, v := range metrics {
+			fmt.Printf("%s %d %d\n", k, v, ts)
 		}
-		fmt.Println(string(metricsJson))
 	}
 }
 
@@ -214,6 +218,7 @@ func getMasterName() (string, error) {
 
 func main() {
 	log.Printf("Starting poll interval at endpoint: http://%s:%s\n", nodeIp, nodePort)
+
 	// Grab node name.
 	var nodeName *string
 	retry := time.Tick(time.Duration(updateInterval) * time.Second)
