@@ -45,10 +45,10 @@ var (
 	nodeIp         string
 	nodePort       string
 	updateInterval int
-	requireMaster bool
-	graphiteIp string
-	graphitePort string
-	metricsPrefix string
+	requireMaster  bool
+	graphiteIp     string
+	graphitePort   string
+	metricsPrefix  string
 
 	stats   = make(map[string][]byte)
 	metrics = make(map[string]int64)
@@ -73,19 +73,22 @@ func pollEs(nodeName string) {
 	for _ = range pollInt {
 		switch requireMaster {
 		case false:
-			m, err := fetchMetrics(); if err != nil {
-					log.Println(err)
-				} else {
-					metricsChan <- m
-				}
+			m, err := fetchMetrics()
+			if err != nil {
+				log.Println(err)
+			} else {
+				metricsChan <- m
+			}
 		case true:
-			masterName, err := getMasterName(); if err != nil {
+			masterName, err := getMasterName()
+			if err != nil {
 				log.Println(err)
 			}
 			if nodeName != masterName {
 				log.Println("Node is not an elected master")
 			} else {
-				m, err := fetchMetrics(); if err != nil {
+				m, err := fetchMetrics()
+				if err != nil {
 					log.Println(err)
 				} else {
 					metricsChan <- m
@@ -97,7 +100,7 @@ func pollEs(nodeName string) {
 
 func handleMetrics(graphite io.ReadWriteCloser) {
 	for {
-		metrics := <- metricsChan
+		metrics := <-metricsChan
 		log.Println("Metrics received")
 
 		ts := metrics["timestamp"]
@@ -252,7 +255,8 @@ func main() {
 	}
 
 	// Connect to Graphite.
-	graphite, err := net.Dial("tcp", graphiteIp + ":" + graphitePort); if err != nil {
+	graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
+	if err != nil {
 		log.Printf("Grapite unreachable: %s", err)
 	} else {
 		log.Printf("Connected to Graphite: %s port %s\n", graphiteIp, graphitePort)

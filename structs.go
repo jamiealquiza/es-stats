@@ -32,11 +32,11 @@ var clusterState struct {
 
 var clusterHealth struct {
 	Status              string `json:"status"`
-	ActivePrimaryShards int64    `json:"active_primary_shards"`
-	ActiveShards        int64    `json:"active_shards"`
-	RelocatingShards    int64    `json:"relocating_shards"`
-	InitializingShards  int64    `json:"initializing_shards"`
-	UnassignedShards    int64    `json:"unassined_shards"`
+	ActivePrimaryShards int64  `json:"active_primary_shards"`
+	ActiveShards        int64  `json:"active_shards"`
+	RelocatingShards    int64  `json:"relocating_shards"`
+	InitializingShards  int64  `json:"initializing_shards"`
+	UnassignedShards    int64  `json:"unassined_shards"`
 }
 
 var clusterStats struct {
