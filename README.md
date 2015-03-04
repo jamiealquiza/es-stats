@@ -51,5 +51,8 @@ Running:
 Get metrics:
 ![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-clusterstats-graphite.png)
 
-Make pretty graphs:
+Make pretty graphs like:
+![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-stats-grafana.png)
+
+and:
 ![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-clusterstats.png)
