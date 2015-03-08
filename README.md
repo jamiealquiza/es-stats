@@ -31,7 +31,7 @@ Usage of ./es-wtf:
 Running:
 <pre>
 % ./es-wtf -ip="192.168.100.204" -interval=5 -graphite-ip="192.168.100.175" -graphite-port="2013"
-2015/03/04 15:27:56 Connect to ElasticSearch: http://192.168.100.204:9200
+2015/03/04 15:27:56 Connected to ElasticSearch: http://192.168.100.204:9200
 2015/03/04 15:27:56 Connected to Graphite: 192.168.100.175 port 2013
 2015/03/04 15:28:01 Metrics received
 2015/03/04 15:28:01 Metrics flushed to Graphite

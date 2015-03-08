@@ -249,7 +249,7 @@ func main() {
 
 		} else {
 			nodeName = &name
-			log.Printf("Connect to ElasticSearch: http://%s:%s\n", nodeIp, nodePort)
+			log.Printf("Connected to ElasticSearch: http://%s:%s\n", nodeIp, nodePort)
 			break
 		}
 	}
