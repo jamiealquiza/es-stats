@@ -27,7 +27,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -98,8 +97,17 @@ func pollEs(nodeName string) {
 	}
 }
 
-func handleMetrics(graphite io.ReadWriteCloser) {
+func handleMetrics() {
 	for {
+		// Connect to Graphite.
+		graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
+		if err != nil {
+			log.Printf("Graphite unreachable: %s", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+
+		// Ship metrics.
 		metrics := <-metricsChan
 		log.Println("Metrics received")
 
@@ -114,6 +122,7 @@ func handleMetrics(graphite io.ReadWriteCloser) {
 		}
 
 		log.Println("Metrics flushed to Graphite")
+		graphite.Close()
 	}
 }
 
@@ -254,15 +263,7 @@ func main() {
 		}
 	}
 
-	// Connect to Graphite.
-	graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
-	if err != nil {
-		log.Printf("Graphite unreachable: %s", err)
-	} else {
-		log.Printf("Connected to Graphite: %s port %s\n", graphiteIp, graphitePort)
-	}
-
 	// Run.
-	go handleMetrics(graphite)
+	go handleMetrics()
 	pollEs(*nodeName)
 }
