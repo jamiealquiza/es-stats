@@ -1,4 +1,4 @@
-# es-wtf
+# es-stats
 
 Reads key cluster metrics from ElasticSearch and writes to Graphite. 
 
@@ -6,19 +6,19 @@ Just built, needs thorough testing.
 
 ### Installation
 
-es-wtf has no external dependencies (you're welcome). Assuming Go is installed (built/tested with 1.4.x):
+es-stats has no external dependencies (you're welcome). Assuming Go is installed (built/tested with 1.4.x):
 
-- `go get github.com/jamiealquiza/go-wtf`
-- `go build github.com/jamiealquiza/go-wtf`
+- `go get github.com/jamiealquiza/es-stats`
+- `go build github.com/jamiealquiza/es-stats`
 
-Binary will be found at: `$GOPATH/bin/go-wtf`
+Binary will be found at: `$GOPATH/bin/es-stats`
 
 ### Usage
 
 Flags:
 <pre>
-./es-wtf -h
-Usage of ./es-wtf:
+./es-stats -h
+Usage of ./es-stats:
   -graphite-ip="": Destination Graphite IP address
   -graphite-port="2003": Destination Graphite plaintext port
   -interval=30: Metrics polling interval
@@ -30,7 +30,7 @@ Usage of ./es-wtf:
 
 Running:
 <pre>
-% ./es-wtf -ip="192.168.100.204" -interval=5 -graphite-ip="192.168.100.175" -graphite-port="2013"
+% ./es-stats -ip="192.168.100.204" -interval=5 -graphite-ip="192.168.100.175" -graphite-port="2013"
 2015/03/04 15:27:56 Connected to ElasticSearch: http://192.168.100.204:9200
 2015/03/04 15:27:56 Connected to Graphite: 192.168.100.175 port 2013
 2015/03/04 15:28:01 Metrics received
