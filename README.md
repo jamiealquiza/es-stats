@@ -13,6 +13,8 @@ es-stats has no external dependencies (you're welcome). Assuming Go is installed
 
 Binary will be found at: `$GOPATH/bin/es-stats`
 
+Starter Grafana template: https://gist.github.com/jamiealquiza/298575115337fdf03ca5
+
 ### Usage
 
 Flags:
