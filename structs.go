@@ -36,7 +36,7 @@ var clusterHealth struct {
 	ActiveShards        int64  `json:"active_shards"`
 	RelocatingShards    int64  `json:"relocating_shards"`
 	InitializingShards  int64  `json:"initializing_shards"`
-	UnassignedShards    int64  `json:"unassined_shards"`
+	UnassignedShards    int64  `json:"unassigned_shards"`
 }
 
 var clusterStats struct {
