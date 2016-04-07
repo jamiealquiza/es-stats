@@ -1,8 +1,9 @@
 # es-stats
 
-Reads key cluster metrics from ElasticSearch and writes to Graphite. 
+Reads key cluster metrics from ElasticSearch and writes to Graphite.
 
-Just built, needs thorough testing.
+Make pretty graphs.
+![ScreenShot](https://raw.githubusercontent.com/jamiealquiza/catpics/master/es.jpg)
 
 ### Installation
 
@@ -47,6 +48,3 @@ Running:
 
 Get metrics:
 ![ScreenShot](http://us-east.manta.joyent.com/jalquiza/public/github/es-clusterstats-graphite.png)
-
-Make pretty graphs like:
-![ScreenShot](https://raw.githubusercontent.com/jamiealquiza/catpics/master/es.jpg)
