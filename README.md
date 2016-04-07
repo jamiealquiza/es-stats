@@ -1,6 +1,6 @@
 # es-stats
 
-Reads key cluster metrics from ElasticSearch and writes to Graphite.
+Reads key cluster metrics from ElasticSearch and writes to Graphite. This is intended for high-level, general cluster data. More granular data is better fetched on a per-node basis using other tools.
 
 Make pretty graphs.
 ![ScreenShot](https://raw.githubusercontent.com/jamiealquiza/catpics/master/es.jpg)
