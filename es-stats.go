@@ -33,12 +33,16 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"regexp"
+    "strings"
+    "strconv"
 )
 
 var (
 	endpoints = [][]string{
 		[]string{"cluster-health", "_cluster/health"},
 		[]string{"cluster-stats", "_cluster/stats"},
+		[]string{"hot-threads", "_nodes/hot_threads"},
 	}
 
 	nodeIp         string
@@ -126,6 +130,45 @@ func handleMetrics() {
 	}
 }
 
+func handleHotThreads(hot_thread string) map[string]float64 {
+
+	//Converts data from Java stack dump per hot_threads api to sum per thread of CPU usage
+	//Righ now just supports merge and bulk threads as they seem the most used
+	//future releases might support other thread operations
+
+
+	rp := regexp.MustCompile("\\d{1,3}\\.\\d")
+    x := strings.Split(hot_thread,"\n")
+    var ht_map map[string]float64
+    bulk_sum := 0.0
+    merge_sum := 0.0
+    for line := range x {
+        if strings.Contains(x[line],"Merge Thread") {
+	    percent := rp.FindString(x[line])
+            fmt.Printf("Merge Thread: " + percent + "\n")
+            var f float64
+	    f, _ = strconv.ParseFloat(percent,64) 
+	    merge_sum += f
+	}
+  
+	if strings.Contains(x[line],"bulk") && strings.Contains(x[line],"cpu") {
+	    percent := rp.FindString(x[line])
+            fmt.Printf("Bulk Thread: " + percent + "\n")
+            var f float64
+	    f, _ = strconv.ParseFloat(percent,64)
+	    bulk_sum += f
+	}
+	
+     }
+    
+    ht_map["bulk"] = bulk_sum
+    ht_map["merge"] = merge_sum
+
+    return ht_map
+
+}
+
+
 func fetchMetrics() (map[string]int64, error) {
 	for i := range endpoints {
 		key, endpoint := endpoints[i][0], endpoints[i][1]
@@ -140,6 +183,9 @@ func fetchMetrics() (map[string]int64, error) {
 
 	json.Unmarshal(stats["cluster-stats"], &clusterStats)
 	json.Unmarshal(stats["cluster-health"], &clusterHealth)
+
+	//Handle hot-threads, convert byte array to string
+	ht_map = handleHotThreads(string(stats["hot-threads"][:]))
 
 	now := time.Now()
 	ts := int64(now.Unix())
@@ -188,6 +234,9 @@ func fetchMetrics() (map[string]int64, error) {
 	metrics["es-stats.mem.segments.version_map_memory_in_bytes"] = clusterStats.Indices.Segments.VersionMapMemoryInBytes
 	metrics["es-stats.mem.segments.fixed_bit_set_memory_in_bytes"] = clusterStats.Indices.Segments.FixedBitSetMemoryInBytes
 
+	metrics["es-stats.hot_threads.bulk"] = ht_map["bulk"]
+	metrics["es-stats.hot_threads.merge"] = ht_map["merge"]
+	
 	return metrics, nil
 }
 
