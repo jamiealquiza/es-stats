@@ -99,20 +99,20 @@ func pollEs(nodeName string) {
 
 func handleMetrics() {
 	for {
-		// Connect to Graphite.
-		graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
-		if err != nil {
-			log.Printf("Graphite unreachable: %s", err)
-			time.Sleep(30 * time.Second)
-			continue
-		}
-
 		// Ship metrics.
 		metrics := <-metricsChan
 		log.Println("Metrics received")
 
 		ts := metrics["timestamp"]
 		delete(metrics, "timestamp")
+            CONNECT:
+                // Connect to Graphite.
+		graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
+		if err != nil {
+			log.Printf("Graphite unreachable: %s", err)
+			time.Sleep(30 * time.Second)
+			goto CONNECT
+		}
 
 		for k, v := range metrics {
 			_, err := fmt.Fprintf(graphite, "%s.%s %d %d\n", metricsPrefix, k, v, ts)
