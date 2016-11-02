@@ -105,13 +105,13 @@ func handleMetrics() {
 
 		ts := metrics["timestamp"]
 		delete(metrics, "timestamp")
-
+            CONNECT:
                 // Connect to Graphite.
 		graphite, err := net.Dial("tcp", graphiteIp+":"+graphitePort)
 		if err != nil {
 			log.Printf("Graphite unreachable: %s", err)
 			time.Sleep(30 * time.Second)
-			continue
+			goto CONNECT
 		}
 
 		for k, v := range metrics {
